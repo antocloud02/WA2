@@ -8,6 +8,7 @@ const { phoneNumberFormatter } = require("./helpers/formatter");
 // const fileUpload = require("express-fileupload");
 const axios = require("axios");
 const port = process.env.PORT || 8000;
+const urlx = require("url");
 
 const app = express();
 const server = http.createServer(app);
@@ -27,17 +28,28 @@ app.use(
 
 const db = require("./helpers/db.js");
 
-var urlwebhook = "http://saksesa.com/was";
+var urlwebhook = "http://whatsapp.sisfobis.com/api/balascs";
 
 (async () => {
   app.get("/", (req, res) => {
-    // console.log("/");
-    // console.log(req);
-    // console.log(res);
     res.sendFile("index.html", {
       root: __dirname,
     });
   });
+  app.get("/realtime", (req, res) => {
+    res.sendFile("realtime.html", {
+      root: __dirname,
+    });
+  });
+
+  app.post("/event", (req, res) => {
+    res.status(200).json({
+      status: true,
+      response: req.body,
+    });
+    io.sockets.emit("data", req.body);
+  });
+
   app.post("/setwebhook", (req, res) => {
     // res.status(200).json({
     //   status: "ok",
@@ -114,132 +126,136 @@ var urlwebhook = "http://saksesa.com/was";
   // Socket IO
   // var interval;
   var sss = 0;
+  var hhh = 0;
   var statusio = false;
   var ffffff = false;
   // console.log("check io", socket.connected);
   io.on("connection", function (socket) {
-    sss++;
-    ffffff = socket;
-    // console.log("CEK...");
-    // console.log(client);
-    statusio = socket.connected;
-    ffffff.emit("URL WEBHOOK", urlwebhook);
-    console.log("URL WEBHOOK", urlwebhook);
-    ffffff.emit("message", "Connecting...");
-    console.log("Connecting...");
-    if (client.pupBrowser != null) {
-      if (client.pupBrowser._process.killed) {
-        console.log("PUPBROWSER...");
-        db.removeSession();
-        client.destroy();
-        client.initialize();
-      } else {
-        console.log(client.info);
-        if (typeof client.info !== "undefined") {
-          (async () => {
-            checkSession = await db.readSession();
-            console.log(checkSession);
-            if (checkSession != "") {
-              console.log("message", "Whatsapp is ready2!");
-              ffffff.emit("ready", "Whatsapp is ready2!");
-              ffffff.emit("message", "Whatsapp is ready2!");
-            }
-          })();
-        }
-      }
-    }
-    // if (client.pupPage != null) {
-    //   console.log("Client tidak null");
-    //   if (!client.pupPage.isClosed()) {
-    //     // client.destroy();
-    //     // client.initialize();
-    //   }
-    // }
-    // statusio = "connect";
-    // db.removeSession();
-    // console.log(client.pupPage);
-    // sss = 0;
-
-    // interval = setInterval(function () {
-    //   console.log(sss);
-    //   if (sss > 20) {
-    //     clearInterval(interval);
-    //     console.log("ooooooooooooooooooooooooooooo");
-    //     client.destroy();
-    //     client.initialize();
-    //   }
-    //   sss++;
-    // }, 1000);
-    console.log(sss);
-    if (sss <= 1) {
-      client.on("qr", (qr) => {
-        console.log("Scan QR-Code", qr);
-        // if (typeof interval !== "undefined") {
-        //   clearInterval(interval);
-        // }
-        qrcode.toDataURL(qr, (err, url) => {
-          ffffff.emit("qr", url);
-          ffffff.emit("message", "QR Code received, scan please!");
-        });
-      });
-
-      client.on("ready", () => {
-        // if (typeof interval !== "undefined") {
-        //   clearInterval(interval);
-        // }
-        console.log("Whatsapp is ready!");
-        ffffff.emit("ready", "Whatsapp is ready!");
-        ffffff.emit("message", "Whatsapp is ready!");
-      });
-
-      client.on("authenticated", (session) => {
-        // if (typeof interval !== "undefined") {
-        //   clearInterval(interval);
-        // }
-        console.log("Whatsapp is authenticated!");
-        ffffff.emit("authenticated", "Whatsapp is authenticated!");
-        ffffff.emit("message", "Whatsapp is authenticated!");
-        console.log("AUTHENTICATED", session);
-        // Save session to DB
-        db.saveSession(session);
-        // savedSession = session;
-      });
-
-      client.on("auth_failure", function (session) {
-        // if (typeof interval !== "undefined") {
-        //   clearInterval(interval);
-        // }
-
-        console.log("Auth failure, restarting...");
-        // console.log(client);
-        ffffff.emit("message", "Auth failure, restarting...");
-      });
-
-      client.on("disconnected", (reason) => {
-        // if (typeof interval !== "undefined") {
-        //   clearInterval(interval);
-        // }
-        ffffff.emit("message", "Whatsapp is disconnected!");
-        // Remove session from DB
-        console.log("Whatsapp is disconnected!");
-        // console.log(client);
-        if (statusio) {
+    let uu = urlx.parse(socket.handshake.headers.referer);
+    if (uu.pathname == "/") {
+      sss++;
+      ffffff = socket;
+      statusio = socket.connected;
+      ffffff.emit("URL WEBHOOK", urlwebhook);
+      console.log("URL WEBHOOK", urlwebhook);
+      ffffff.emit("message", "Connecting...");
+      console.log("Connecting...");
+      if (client.pupBrowser != null) {
+        if (client.pupBrowser._process.killed) {
+          console.log("PUPBROWSER...");
           db.removeSession();
           client.destroy();
           client.initialize();
+        } else {
+          console.log(client.info);
+          if (typeof client.info !== "undefined") {
+            (async () => {
+              checkSession = await db.readSession();
+              console.log(checkSession);
+              if (checkSession != "") {
+                console.log("message", "Whatsapp is ready2!");
+                ffffff.emit("ready", "Whatsapp is ready2!");
+                ffffff.emit("message", "Whatsapp is ready2!");
+              }
+            })();
+          }
         }
-        // console.log("Whatsapp is destroy!");
-        // console.log(client.pupPage.isClosed());
-      });
-    }
-
-    socket.on("disconnect", function () {
-      // if (typeof interval !== "undefined") {
-      //   clearInterval(interval);
+      }
+      // if (client.pupPage != null) {
+      //   console.log("Client tidak null");
+      //   if (!client.pupPage.isClosed()) {
+      //     // client.destroy();
+      //     // client.initialize();
+      //   }
       // }
-      console.log("Got disconnect!");
-      statusio = socket.connected;
-    });
+      // statusio = "connect";
+      // db.removeSession();
+      // console.log(client.pupPage);
+      // sss = 0;
+
+      // interval = setInterval(function () {
+      //   console.log(sss);
+      //   if (sss > 20) {
+      //     clearInterval(interval);
+      //     console.log("ooooooooooooooooooooooooooooo");
+      //     client.destroy();
+      //     client.initialize();
+      //   }
+      //   sss++;
+      // }, 1000);
+      console.log(sss);
+      if (sss <= 1) {
+        client.on("qr", (qr) => {
+          console.log("Scan QR-Code", qr);
+          // if (typeof interval !== "undefined") {
+          //   clearInterval(interval);
+          // }
+          qrcode.toDataURL(qr, (err, url) => {
+            ffffff.emit("qr", url);
+            ffffff.emit("message", "QR Code received, scan please!");
+          });
+        });
+
+        client.on("ready", () => {
+          // if (typeof interval !== "undefined") {
+          //   clearInterval(interval);
+          // }
+          console.log("Whatsapp is ready!");
+          ffffff.emit("ready", "Whatsapp is ready!");
+          ffffff.emit("message", "Whatsapp is ready!");
+        });
+
+        client.on("authenticated", (session) => {
+          // if (typeof interval !== "undefined") {
+          //   clearInterval(interval);
+          // }
+          console.log("Whatsapp is authenticated!");
+          ffffff.emit("authenticated", "Whatsapp is authenticated!");
+          ffffff.emit("message", "Whatsapp is authenticated!");
+          console.log("AUTHENTICATED", session);
+          // Save session to DB
+          db.saveSession(session);
+          // savedSession = session;
+        });
+
+        client.on("auth_failure", function (session) {
+          // if (typeof interval !== "undefined") {
+          //   clearInterval(interval);
+          // }
+
+          console.log("Auth failure, restarting...");
+          // console.log(client);
+          ffffff.emit("message", "Auth failure, restarting...");
+        });
+
+        client.on("disconnected", (reason) => {
+          // if (typeof interval !== "undefined") {
+          //   clearInterval(interval);
+          // }
+          ffffff.emit("message", "Whatsapp is disconnected!");
+          // Remove session from DB
+          console.log("Whatsapp is disconnected!");
+          // console.log(client);
+          if (statusio) {
+            db.removeSession();
+            client.destroy();
+            client.initialize();
+          }
+          // console.log("Whatsapp is destroy!");
+          // console.log(client.pupPage.isClosed());
+        });
+      }
+
+      socket.on("disconnect", function () {
+        // if (typeof interval !== "undefined") {
+        //   clearInterval(interval);
+        // }
+        console.log("Got disconnect!");
+        statusio = socket.connected;
+      });
+    } else if (uu.pathname == "/realtime") {
+      console.log("realtime...");
+    }
   });
 
   const checkRegisteredNumber = async function (number) {
