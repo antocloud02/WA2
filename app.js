@@ -87,12 +87,11 @@ var urlwebhook = "http://whatsapp.sisfobis.com/api/balascs";
   client.on("message", (msg) => {
     axios
       .post(urlwebhook, {
-        firstName: "Fred",
         lastName: msg,
       })
       .then(function (response) {
         console.log("callback terkirim");
-        console.log(response);
+        // console.log(response);
       })
       .catch(function (error) {
         console.log("callback gagal terkirim");
