@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Whatsapp API</title>
+</head>
+<body>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+	<script>
+		var key='';
+		var socket = io();
+		key=parseURLParams(window.location.href).key[0];
+
+		window.addEventListener('message', event => {
+			let hook=JSON.parse(event.data).hook;
+			socket.emit('hook', {
+				hook: hook,
+				id: key,
+				description: key
+			});
+		});
+		
+		$(document).ready(function() {
+
+			socket.emit('key', {
+				id: key,
+				description: key
+			});
+
+			socket.on('init', function(data) {
+				if(data.id==key){
+					data['aksi']='init';
+					send(data)
+				}
+			});
+
+			socket.on('message', function(data) {
+				if(data.id==key){
+					// data['aksi']='message';
+					// send(data)
+					console.log('message')
+					console.log(data)
+				}
+			});
+
+			socket.on('qr', function(data) {
+				if(data.id==key){
+					// console.log('qr')
+					data['aksi']='qr';
+					send(data)
+					// console.log(data)
+				}
+			});
+
+			socket.on('ready', function(data) {
+				if(data.id==key){
+					data['aksi']='ready';
+					send(data)
+				}
+			});
+
+			socket.on('authenticated', function(data) {
+				if(data.id==key){
+					data['aksi']='authenticated';
+					send(data)
+				}
+			});
+
+			socket.on('disconnected', function(data) {
+				if(data.id==key){
+					data['aksi']='disconnected';
+					send(data)
+				}
+			});
+		});
+        function send(psn){
+            window.parent.postMessage({
+                'func': 'parentFunc',
+                'message': psn
+            }, "*");
+        }
+		function parseURLParams(url) {
+			var queryStart = url.indexOf("?") + 1,
+				queryEnd   = url.indexOf("#") + 1 || url.length + 1,
+				query = url.slice(queryStart, queryEnd - 1),
+				pairs = query.replace(/\+/g, " ").split("&"),
+				parms = {}, i, n, v, nv;
+
+			if (query === url || query === "") return;
+
+			for (i = 0; i < pairs.length; i++) {
+				nv = pairs[i].split("=", 2);
+				n = decodeURIComponent(nv[0]);
+				v = decodeURIComponent(nv[1]);
+
+				if (!parms.hasOwnProperty(n)) parms[n] = [];
+				parms[n].push(nv.length === 2 ? v : null);
+			}
+			return parms;
+		}
+	</script>
+</body>
+</html>
