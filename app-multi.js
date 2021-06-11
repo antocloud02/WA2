@@ -6,6 +6,7 @@ const http = require("http");
 const { phoneNumberFormatter } = require("./helpers/formatter");
 const axios = require("axios");
 const port = process.env.PORT || 8000;
+const urlx = require("url");
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +25,19 @@ app.get("/", (req, res) => {
   res.sendFile("index-multiple-device.html", {
     root: __dirname,
   });
+});
+app.get("/realtime", (req, res) => {
+  res.sendFile("realtime.html", {
+    root: __dirname,
+  });
+});
+
+app.post("/event", (req, res) => {
+  res.status(200).json({
+    status: true,
+    response: req.body,
+  });
+  io.sockets.emit("data", req.body);
 });
 
 const sessions = [];
@@ -171,22 +185,27 @@ init();
 
 // Socket IO
 io.on("connection", function (socket) {
-  sss++;
-  socket.on("key", async (data) => {
-    let dtusers = await db.readUsersFirst(data.id, data.description);
-    if (dtusers != "") {
-      if (sss > 1) {
-        socket.emit("init", dtusers[0]);
+  let uu = urlx.parse(socket.handshake.headers.referer);
+  if (uu.pathname == "/") {
+    sss++;
+    socket.on("key", async (data) => {
+      let dtusers = await db.readUsersFirst(data.id, data.description);
+      if (dtusers != "") {
+        if (sss > 1) {
+          socket.emit("init", dtusers[0]);
+        }
+      } else {
+        console.log("buat session: " + data.id);
+        createSession(data.id, data.description, socket);
       }
-    } else {
-      console.log("buat session: " + data.id);
-      createSession(data.id, data.description, socket);
-    }
-  });
-  socket.on("hook", function (data) {
-    console.log("saved hook: " + data.id);
-    db.saveHook(data.id, data.description, data.hook);
-  });
+    });
+    socket.on("hook", function (data) {
+      console.log("saved hook: " + data.id);
+      db.saveHook(data.id, data.description, data.hook);
+    });
+  } else if (uu.pathname == "/realtime") {
+    console.log("realtime...");
+  }
   // init(socket);
 });
 
