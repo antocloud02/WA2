@@ -41,9 +41,10 @@ app.post("/event", (req, res) => {
 });
 
 const sessions = [];
+const clients = [];
 
 var sss = 0;
-const createSession = async (id, description, socket) => {
+const createSession = async (id, description) => {
   console.log("Creating session: " + id);
 
   const sessionCfg = await db.readSession(id, description);
@@ -67,6 +68,18 @@ const createSession = async (id, description, socket) => {
   });
 
   client.initialize();
+
+  for (var x = 0; x < clients.length; x++) {
+    if (clients[x].id == id) {
+      clients.splice(x, 1);
+      console.log("Clinet duplicate destroy");
+      clients[x].client.destroy();
+    }
+  }
+  clients.push({
+    id: id,
+    client: client,
+  });
 
   client.on("qr", (qr) => {
     console.log("QR RECEIVED", qr);
@@ -107,7 +120,9 @@ const createSession = async (id, description, socket) => {
   });
 
   client.on("auth_failure", function (session) {
+    console.log("Auth failure, restarting...");
     io.emit("message", { id: id, text: "Auth failure, restarting..." });
+    db.saveUsers(id, description, false, {});
   });
 
   client.on("disconnected", (reason) => {
@@ -143,24 +158,24 @@ const createSession = async (id, description, socket) => {
         });
     }
   });
-
-  if (socket) {
-    console.log("Client SET!");
-    socket.on("disconnect", async () => {
-      let dtusers = await db.readUsersFirst(id, description);
-      if (dtusers != "") {
-        if (!dtusers[0].ready) {
-          console.log(sessions);
-          console.log("Client is Destroy!");
-          client.destroy();
-        }
-      } else {
-        console.log(sessions);
-        console.log("Client is Destroy!");
-        client.destroy();
-      }
-    });
-  }
+  // console.log(sessions);
+  // if (socket) {
+  // io.on("disconnect", async () => {
+  //   console.log("Client SET!");
+  //   let dtusers = await db.readUsersFirst(id, description);
+  //   if (dtusers != "") {
+  //     if (!dtusers[0].ready) {
+  //       console.log(sessions);
+  //       console.log("Client is Destroy!");
+  //       client.destroy();
+  //     }
+  //   } else {
+  //     console.log(sessions);
+  //     console.log("Client is Destroy!");
+  //     client.destroy();
+  //   }
+  // });
+  // }
 
   // Menambahkan session ke file
   // db.saveUsers(id, description, false, {});
@@ -191,12 +206,31 @@ io.on("connection", function (socket) {
     socket.on("key", async (data) => {
       let dtusers = await db.readUsersFirst(data.id, data.description);
       if (dtusers != "") {
+        if (!dtusers[0].ready) {
+          socket.on("disconnect", function () {
+            const clientx = clients.find((sess) => sess.id == data.id);
+            // console.log(clientx);
+            if (clientx) {
+              console.log("Client is Destroy!");
+              clientx.client.destroy();
+            }
+          });
+        }
         if (sss > 1) {
           socket.emit("init", dtusers[0]);
         }
       } else {
         console.log("buat session: " + data.id);
-        createSession(data.id, data.description, socket);
+        createSession(data.id, data.description);
+
+        socket.on("disconnect", function () {
+          const clientx = clients.find((sess) => sess.id == data.id);
+          // console.log(clientx);
+          if (clientx) {
+            console.log("Client baru is Destroy!");
+            clientx.client.destroy();
+          }
+        });
       }
     });
     socket.on("hook", function (data) {
