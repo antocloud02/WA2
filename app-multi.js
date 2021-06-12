@@ -122,7 +122,9 @@ const createSession = async (id, description) => {
   client.on("auth_failure", function (session) {
     console.log("Auth failure, restarting...");
     io.emit("message", { id: id, text: "Auth failure, restarting..." });
-    db.saveUsers(id, description, false, {});
+    db.removeSession(id, description);
+    db.removeUsers(id, description);
+    // db.saveUsers(id, description, false, {});
   });
 
   client.on("disconnected", (reason) => {
