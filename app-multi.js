@@ -216,11 +216,12 @@ io.on("connection", function (socket) {
       if (dtusers != "") {
         if (!dtusers[0].ready) {
           socket.on("disconnect", function () {
-            const clientx = clients.find((sess) => sess.id == data.id);
-            // console.log(clientx);
-            if (clientx) {
-              console.log("Client is Destroy!");
-              clientx.client.destroy();
+            for (var x = 0; x < clients.length; x++) {
+              if (clients[x].id == data.id) {
+                clients.splice(x, 1);
+                console.log("Client is Destroy!");
+                clients[x].client.destroy();
+              }
             }
           });
         }
@@ -232,11 +233,12 @@ io.on("connection", function (socket) {
         createSession(data.id, data.description);
 
         socket.on("disconnect", function () {
-          const clientx = clients.find((sess) => sess.id == data.id);
-          // console.log(clientx);
-          if (clientx) {
-            console.log("Client baru is Destroy!");
-            clientx.client.destroy();
+          for (var x = 0; x < clients.length; x++) {
+            if (clients[x].id == data.id) {
+              clients.splice(x, 1);
+              console.log("Client baru is Destroy!");
+              clients[x].client.destroy();
+            }
           }
         });
       }
