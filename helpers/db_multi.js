@@ -85,7 +85,7 @@ const saveUsers = async (id, description, ready, info) => {
       [id, description]
     );
     if (res.rows.length > 0) {
-      if (ready) {
+      // if (ready) {
         client.query(
           "UPDATE users SET ready=$3, info=$4 WHERE id=$1 AND description=$2",
           [id, description, ready, info],
@@ -97,7 +97,7 @@ const saveUsers = async (id, description, ready, info) => {
             }
           }
         );
-      }
+      // }
     } else if (res.rows.length <= 0) {
       client.query(
         "INSERT INTO users (id,description,ready,info) VALUES($1,$2,$3,$4)",
