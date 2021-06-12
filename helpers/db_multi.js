@@ -2,9 +2,9 @@ const { query } = require("express-validator");
 const { Client } = require("pg");
 
 const client = new Client({
-  // connectionString:
-  //   "postgres://blrpdmsvmwfule:b9e8f562d6b90b4869caefba388481508b20672be236206d856e6ef40f4e6b27@ec2-34-195-143-54.compute-1.amazonaws.com:5432/d1bbk7s6p55icc",
-  connectionString: process.env.DATABASE_URL,
+  connectionString:
+    "postgres://blrpdmsvmwfule:b9e8f562d6b90b4869caefba388481508b20672be236206d856e6ef40f4e6b27@ec2-34-195-143-54.compute-1.amazonaws.com:5432/d1bbk7s6p55icc",
+  // connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false,
   },
@@ -86,22 +86,33 @@ const saveUsers = async (id, description, ready, info) => {
     );
     if (res.rows.length > 0) {
       // if (ready) {
-        client.query(
-          "UPDATE users SET ready=$3, info=$4 WHERE id=$1 AND description=$2",
-          [id, description, ready, info],
-          (err, results) => {
-            if (err) {
-              console.error("Failed to update session!", err);
-            } else {
-              console.log("Users updated!");
-            }
+      client.query(
+        "UPDATE users SET ready=$3, info=$4, number=$5 WHERE id=$1 AND description=$2",
+        [id, description, ready, info, info.me.user],
+        (err, results) => {
+          if (err) {
+            console.error("Failed to update session!", err);
+          } else {
+            console.log("Users updated!");
           }
-        );
+        }
+      );
       // }
     } else if (res.rows.length <= 0) {
+      if (info) {
+        const res1 = await client.query("SELECT * FROM users WHERE number=$1", [
+          info.me.user,
+        ]);
+        if (res1.rows.length > 0) {
+          res1.rows.forEach((sess) => {
+            removeSession(sess.id, sess.description);
+            removeUsers(sess.id, sess.description);
+          });
+        }
+      }
       client.query(
-        "INSERT INTO users (id,description,ready,info) VALUES($1,$2,$3,$4)",
-        [id, description, ready, info],
+        "INSERT INTO users (id,description,ready,info,number) VALUES($1,$2,$3,$4,$5)",
+        [id, description, ready, info, info.me.user],
         (err, results) => {
           if (err) {
             console.error("Failed to save session!", err);

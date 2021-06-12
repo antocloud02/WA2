@@ -71,9 +71,11 @@ const createSession = async (id, description) => {
 
   for (var x = 0; x < clients.length; x++) {
     if (clients[x].id == id) {
-      clients.splice(x, 1);
       console.log("Clinet duplicate destroy");
-      clients[x].client.destroy();
+      if (clients[x].client) {
+        clients[x].client.destroy();
+      }
+      clients.splice(x, 1);
     }
   }
   clients.push({
@@ -127,15 +129,21 @@ const createSession = async (id, description) => {
     // db.saveUsers(id, description, false, {});
   });
 
-  client.on("disconnected", (reason) => {
+  client.on("disconnected", async (reason) => {
     io.emit("disconnected", { id: id });
     io.emit("message", { id: id, text: "Whatsapp is disconnected!" });
     db.removeSession(id, description);
-    for (var x = 0; x < clients.length; x++) {
-      if (clients[x].id == id) {
-        clients.splice(x, 1);
-        console.log("Clinet disconnected destroy");
-        clients[x].client.destroy();
+
+    let dtusers2 = await db.readUsersFirst(id, description);
+    if (dtusers2 == "") {
+      for (var x = 0; x < clients.length; x++) {
+        if (clients[x].id == id) {
+          console.log("Clinet disconnected destroy");
+          if (clients[x].client) {
+            clients[x].client.destroy();
+          }
+          clients.splice(x, 1);
+        }
       }
     }
     // client.initialize();
@@ -151,7 +159,13 @@ const createSession = async (id, description) => {
     if (msg.body == "!ping") {
       msg.reply(urlhook);
     }
-    if (urlhook != "") {
+    if (
+      urlhook != "" &&
+      typeof urlhook !== "undefined" &&
+      !urlhook &&
+      urlhook != null
+    ) {
+      console.log(urlhook);
       axios
         .post(urlhook, {
           lastName: msg,
@@ -214,34 +228,38 @@ io.on("connection", function (socket) {
     socket.on("key", async (data) => {
       let dtusers = await db.readUsersFirst(data.id, data.description);
       if (dtusers != "") {
-        if (!dtusers[0].ready) {
-          socket.on("disconnect", function () {
-            for (var x = 0; x < clients.length; x++) {
-              if (clients[x].id == data.id) {
-                clients.splice(x, 1);
-                console.log("Client is Destroy!");
-                clients[x].client.destroy();
-              }
-            }
-          });
-        }
+        // if (!dtusers[0].ready) {
+        //   socket.on("disconnect", function () {
+        //     for (var x = 0; x < clients.length; x++) {
+        //       if (clients[x].id == data.id) {
+        //         console.log("Client is Destroy!");
+        //         clients[x].client.destroy();
+        //         clients.splice(x, 1);
+        //       }
+        //     }
+        //   });
+        // }
         if (sss > 1) {
           socket.emit("init", dtusers[0]);
         }
       } else {
         console.log("buat session: " + data.id);
         createSession(data.id, data.description);
-
-        socket.on("disconnect", function () {
+      }
+      socket.on("disconnect", async () => {
+        let dtusers2 = await db.readUsersFirst(data.id, data.description);
+        if (dtusers2 == "") {
           for (var x = 0; x < clients.length; x++) {
             if (clients[x].id == data.id) {
-              clients.splice(x, 1);
               console.log("Client baru is Destroy!");
-              clients[x].client.destroy();
+              if (clients[x].client) {
+                clients[x].client.destroy();
+              }
+              clients.splice(x, 1);
             }
           }
-        });
-      }
+        }
+      });
     });
     socket.on("hook", function (data) {
       console.log("saved hook: " + data.id);
