@@ -129,7 +129,13 @@ const createSession = async (id, description) => {
     io.emit("disconnected", { id: id });
     io.emit("message", { id: id, text: "Whatsapp is disconnected!" });
     db.removeSession(id, description);
-    client.destroy();
+    for (var x = 0; x < clients.length; x++) {
+      if (clients[x].id == id) {
+        clients.splice(x, 1);
+        console.log("Clinet disconnected destroy");
+        clients[x].client.destroy();
+      }
+    }
     // client.initialize();
 
     // Menghapus pada file sessions
