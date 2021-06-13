@@ -154,17 +154,11 @@ const createSession = async (id, description) => {
 
   client.on("message", async (msg) => {
     let dtusers = await db.readUsersFirst(id, description);
-    // console.log(dtusers);
     let urlhook = dtusers[0].hook;
     if (msg.body == "!ping") {
       msg.reply(urlhook);
     }
-    if (
-      urlhook != "" &&
-      typeof urlhook !== "undefined" &&
-      !urlhook &&
-      urlhook != null
-    ) {
+    if (urlhook != "" && urlhook != null) {
       console.log(urlhook);
       axios
         .post(urlhook, {
@@ -172,7 +166,6 @@ const createSession = async (id, description) => {
         })
         .then(function (response) {
           console.log("callback terkirim");
-          // console.log(response);
         })
         .catch(function (error) {
           console.log("callback gagal terkirim");
@@ -180,27 +173,6 @@ const createSession = async (id, description) => {
         });
     }
   });
-  // console.log(sessions);
-  // if (socket) {
-  // io.on("disconnect", async () => {
-  //   console.log("Client SET!");
-  //   let dtusers = await db.readUsersFirst(id, description);
-  //   if (dtusers != "") {
-  //     if (!dtusers[0].ready) {
-  //       console.log(sessions);
-  //       console.log("Client is Destroy!");
-  //       client.destroy();
-  //     }
-  //   } else {
-  //     console.log(sessions);
-  //     console.log("Client is Destroy!");
-  //     client.destroy();
-  //   }
-  // });
-  // }
-
-  // Menambahkan session ke file
-  // db.saveUsers(id, description, false, {});
 };
 
 const init = async (socket) => {
@@ -228,17 +200,6 @@ io.on("connection", function (socket) {
     socket.on("key", async (data) => {
       let dtusers = await db.readUsersFirst(data.id, data.description);
       if (dtusers != "") {
-        // if (!dtusers[0].ready) {
-        //   socket.on("disconnect", function () {
-        //     for (var x = 0; x < clients.length; x++) {
-        //       if (clients[x].id == data.id) {
-        //         console.log("Client is Destroy!");
-        //         clients[x].client.destroy();
-        //         clients.splice(x, 1);
-        //       }
-        //     }
-        //   });
-        // }
         if (sss > 1) {
           socket.emit("init", dtusers[0]);
         }
@@ -268,7 +229,6 @@ io.on("connection", function (socket) {
   } else if (uu.pathname == "/realtime") {
     console.log("realtime...");
   }
-  // init(socket);
 });
 
 // Send message
@@ -276,7 +236,6 @@ app.post("/send-message", (req, res) => {
   const sender = req.body.sender;
   const number = phoneNumberFormatter(req.body.number);
   const message = req.body.message;
-  // console.log(sessions);
 
   const client = sessions.find((sess) => sess.id == sender).client;
 
