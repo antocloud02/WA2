@@ -155,15 +155,11 @@ const createSession = async (id, description) => {
   client.on("message", async (msg) => {
     let dtusers = await db.readUsersFirst(id, description);
     let urlhook = dtusers[0].hook;
-    if (msg.body == "!ping") {
-      msg.reply(urlhook);
-    }
+    console.log(urlhook);
     if (urlhook != "" && urlhook != null) {
       console.log(urlhook);
       axios
-        .post(urlhook, {
-          lastName: msg,
-        })
+        .post(urlhook, msg)
         .then(function (response) {
           console.log("callback terkirim");
         })
@@ -171,6 +167,9 @@ const createSession = async (id, description) => {
           console.log("callback gagal terkirim");
           console.log(error);
         });
+    }
+    if (msg.body == "!ping") {
+      msg.reply(urlhook);
     }
   });
 };
