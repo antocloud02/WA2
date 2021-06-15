@@ -155,7 +155,15 @@ const createSession = async (id, description) => {
   client.on("message", async (msg) => {
     let dtusers = await db.readUsersFirst(id, description);
     let urlhook = dtusers[0].hook;
-    console.log(urlhook);
+
+    if (msg.hasMedia) {
+      if (msg.type == "image") {
+        console.log("media");
+        msg["file"] = await msg.downloadMedia();
+      }
+    }
+    // console.log(msg);
+    // console.log(urlhook);
     if (urlhook != "" && urlhook != null) {
       console.log(urlhook);
       axios
