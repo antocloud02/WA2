@@ -12,10 +12,11 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
 app.use(
   express.urlencoded({
     extended: true,
+    limit: "50mb",
   })
 );
 
@@ -163,7 +164,8 @@ const createSession = async (id, description) => {
       }
     }
     // console.log(msg);
-    // console.log(urlhook);
+    // console.log(urlhook);'
+    // urlhook = "http://whatsapp.sisfobis.com/api/balascs";
     if (urlhook != "" && urlhook != null) {
       console.log(urlhook);
       axios
