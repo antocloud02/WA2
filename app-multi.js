@@ -169,6 +169,9 @@ const createSession = async (id, description) => {
       axios
         .post(urlhook, msg)
         .then(function (response) {
+          if (response.status == 0) {
+            console.log(response);
+          }
           console.log("callback terkirim");
         })
         .catch(function (error) {
