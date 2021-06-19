@@ -1,4 +1,4 @@
-const { Client, MessageMedia } = require("whatsapp-web.js");
+const { Client, MessageMedia, Message } = require("whatsapp-web.js");
 const express = require("express");
 const socketIO = require("socket.io");
 const qrcode = require("qrcode");
@@ -164,7 +164,7 @@ const createSession = async (id, description) => {
       // }
       // simpan msg ke database
       console.log(msg.id._serialized);
-      db.saveMedia(id, description, msg);
+      // db.saveMedia(id, description, msg);
     }
     // console.log(msg);
     // console.log(urlhook);'
@@ -250,13 +250,17 @@ io.on("connection", function (socket) {
 app.post("/download-file", async (req, res) => {
   const key = req.body.key;
   const id = req.body.id;
-  const msg = await db.readMedia(key, id);
-  console.log(msg);
-  // let message = new Message(client, {
-  //   id: { _serialized: _serialized },
-  //   clientUrl: true, // --> IMPORTANT
-  // });
-  // const file = await msg.downloadMedia();
+  const client = sessions.find((sess) => sess.id == id).client;
+  let message = new Message(client, {
+    id: { _serialized: key },
+    clientUrl: true,
+  });
+  const file = await message.downloadMedia();
+  console.log("download file");
+  res.status(200).json({
+    status: true,
+    response: file,
+  });
 });
 // Send message
 app.post("/send-message", (req, res) => {
