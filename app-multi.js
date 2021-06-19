@@ -158,10 +158,10 @@ const createSession = async (id, description) => {
     let urlhook = dtusers[0].hook;
 
     if (msg.hasMedia) {
-      if (msg.type == "image") {
+      // if (msg.type == "image") {
         console.log("media");
         msg["file"] = await msg.downloadMedia();
-      }
+      // }
     }
     // console.log(msg);
     // console.log(urlhook);'
