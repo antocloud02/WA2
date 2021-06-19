@@ -159,9 +159,12 @@ const createSession = async (id, description) => {
 
     if (msg.hasMedia) {
       // if (msg.type == "image") {
-        console.log("media");
-        msg["file"] = await msg.downloadMedia();
+      console.log("media");
+      //   msg["file"] = await msg.downloadMedia();
       // }
+      // simpan msg ke database
+      console.log(msg.mediaKey);
+      db.saveMedia(id, description, msg);
     }
     // console.log(msg);
     // console.log(urlhook);'

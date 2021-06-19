@@ -3,7 +3,7 @@ const { Client } = require("pg");
 
 const client = new Client({
   // connectionString:
-    // "postgres://blrpdmsvmwfule:b9e8f562d6b90b4869caefba388481508b20672be236206d856e6ef40f4e6b27@ec2-34-195-143-54.compute-1.amazonaws.com:5432/d1bbk7s6p55icc",
+  // "postgres://blrpdmsvmwfule:b9e8f562d6b90b4869caefba388481508b20672be236206d856e6ef40f4e6b27@ec2-34-195-143-54.compute-1.amazonaws.com:5432/d1bbk7s6p55icc",
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false,
@@ -23,6 +23,20 @@ const readSession = async (id, description) => {
   } catch (err) {
     throw err;
   }
+};
+
+const saveMedia = (id, description, msg) => {
+  client.query(
+    "INSERT INTO media (key, id, description, chat) VALUES($1,$2,$3,$4)",
+    [msg.mediaKey, id, description, msg],
+    (err, results) => {
+      if (err) {
+        console.error("Failed to save media!", err);
+      } else {
+        console.log("Media saved!");
+      }
+    }
+  );
 };
 
 const saveSession = (session, id, description) => {
@@ -175,4 +189,5 @@ module.exports = {
   removeSession,
   readUsersFirst,
   saveHook,
+  saveMedia,
 };
