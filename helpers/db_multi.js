@@ -25,6 +25,19 @@ const readSession = async (id, description) => {
   }
 };
 
+const readMedia = async (key, id) => {
+  try {
+    const res = await client.query(
+      "SELECT * FROM media WHERE id=$2 AND description=$2 AND key=$1",
+      [key, id]
+    );
+    if (res.rows.length > 0) return res.rows[0].msg;
+    return "";
+  } catch (err) {
+    throw err;
+  }
+};
+
 const saveMedia = (id, description, msg) => {
   client.query(
     "INSERT INTO media (key, id, description, chat) VALUES($1,$2,$3,$4)",
@@ -190,4 +203,5 @@ module.exports = {
   readUsersFirst,
   saveHook,
   saveMedia,
+  readMedia,
 };
