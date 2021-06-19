@@ -163,7 +163,7 @@ const createSession = async (id, description) => {
       //   msg["file"] = await msg.downloadMedia();
       // }
       // simpan msg ke database
-      console.log(msg.mediaKey);
+      console.log(msg.id._serialized);
       db.saveMedia(id, description, msg);
     }
     // console.log(msg);
@@ -251,8 +251,12 @@ app.post("/download-file", async (req, res) => {
   const key = req.body.key;
   const id = req.body.id;
   const msg = await db.readMedia(key, id);
-  const file = await msg.downloadMedia();
-  console.log(file);
+  console.log(msg);
+  // let message = new Message(client, {
+  //   id: { _serialized: _serialized },
+  //   clientUrl: true, // --> IMPORTANT
+  // });
+  // const file = await msg.downloadMedia();
 });
 // Send message
 app.post("/send-message", (req, res) => {

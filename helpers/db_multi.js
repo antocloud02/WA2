@@ -41,7 +41,7 @@ const readMedia = async (key, id) => {
 const saveMedia = (id, description, msg) => {
   client.query(
     "INSERT INTO media (key, id, description, chat) VALUES($1,$2,$3,$4)",
-    [msg.mediaKey, id, description, msg],
+    [msg.id._serialized, id, description, msg],
     (err, results) => {
       if (err) {
         console.error("Failed to save media!", err);
