@@ -267,23 +267,59 @@ app.post("/send-message", (req, res) => {
   const sender = req.body.sender;
   const number = phoneNumberFormatter(req.body.number);
   const message = req.body.message;
+  let type = "text";
+  if (typeof req.body.type !== "undefined") {
+    type = req.body.type;
+  }
 
   const client = sessions.find((sess) => sess.id == sender).client;
 
-  client
-    .sendMessage(number, message)
-    .then((response) => {
-      res.status(200).json({
-        status: true,
-        response: response,
+  if (type == "file") {
+    const fileUrl = req.body.fileUrl;
+    let mimetype;
+    const attachment = await axios
+      .get(fileUrl, {
+        responseType: "arraybuffer",
+      })
+      .then((response) => {
+        mimetype = response.headers["content-type"];
+        return response.data.toString("base64");
       });
-    })
-    .catch((err) => {
-      res.status(500).json({
-        status: false,
-        response: err,
+
+    const media = new MessageMedia(mimetype, attachment, "Media");
+
+    client
+      .sendMessage(number, media, {
+        caption: caption,
+      })
+      .then((response) => {
+        res.status(200).json({
+          status: true,
+          response: response,
+        });
+      })
+      .catch((err) => {
+        res.status(500).json({
+          status: false,
+          response: err,
+        });
       });
-    });
+  } else {
+    client
+      .sendMessage(number, message)
+      .then((response) => {
+        res.status(200).json({
+          status: true,
+          response: response,
+        });
+      })
+      .catch((err) => {
+        res.status(500).json({
+          status: false,
+          response: err,
+        });
+      });
+  }
 });
 
 server.listen(port, function () {
