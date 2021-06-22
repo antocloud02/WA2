@@ -156,23 +156,14 @@ const createSession = async (id, description) => {
   client.on("message", async (msg) => {
     let dtusers = await db.readUsersFirst(id, description);
     let urlhook = dtusers[0].hook;
-
     if (msg.hasMedia) {
-      // if (msg.type == "image") {
       console.log("media");
-      //   msg["file"] = await msg.downloadMedia();
-      // }
-      // simpan msg ke database
       console.log(msg.id._serialized);
-      // db.saveMedia(id, description, msg);
     }
-    // console.log(msg);
-    // console.log(urlhook);'
-    // urlhook = "http://whatsapp.sisfobis.com/api/balascs";
     if (urlhook != "" && urlhook != null) {
       console.log(urlhook);
       axios
-        .post(urlhook, msg)
+        .post(urlhook, setrespon(msg))
         .then(function (response) {
           if (response.status == 0) {
             console.log(response);
@@ -246,10 +237,85 @@ io.on("connection", function (socket) {
   }
 });
 
-// Send message
+function setrespon(response) {
+  response["key_chat"] = response.id._serialized;
+  response["dari_saya"] = response.fromMe;
+  response["id"] = response.id.id;
+  response["file_status"] = response.hasMedia;
+  response["tipe"] = response.type;
+  response["teks"] = response.body;
+  response["pengirim"] = response.from;
+  response["tujuan"] = response.to;
+  response["diteruskan"] = response.isForwarded;
+  if (response.type == "vcard") {
+    response["vcard"] = response.body;
+    response["teks"] = "";
+  }
+  if (response.type == "location") {
+    response["lokasi"] = response.location;
+    response["ket_lokasi"] = response.body;
+    response["teks"] = "";
+  }
+  response["author"] = "";
+  response["location"] = "";
+  delete response.ack;
+  delete response.hasMedia;
+  delete response.type;
+  delete response.body;
+  delete response.fromMe;
+  delete response.from;
+  delete response.to;
+  delete response.hasQuotedMsg;
+  delete response.vCards;
+  delete response.mentionedIds;
+  delete response.isStarred;
+  delete response.isForwarded;
+  delete response.mediaKey;
+  delete response.author;
+  delete response.location;
+  if (typeof response.links !== "undefined") {
+    delete response.links;
+  }
+  if (typeof response.isStatus !== "undefined") {
+    delete response.isStatus;
+  }
+  if (typeof response.broadcast !== "undefined") {
+    delete response.broadcast;
+  }
+  return response;
+}
+
+// Download file
 app.post("/download-file", async (req, res) => {
-  const key = req.body.key;
-  const id = req.body.id;
+  if (typeof req.body.key_chat == "undefined") {
+    return res.status(422).json({
+      status: false,
+      respon: "Parameter key_chat tidak ada!",
+    });
+  }
+  if (typeof req.body.key == "undefined") {
+    return res.status(422).json({
+      status: false,
+      respon: "Parameter key tidak ada!",
+    });
+  }
+  const key = req.body.key_chat;
+  const id = req.body.key;
+
+  if (key == "") {
+    return res.status(422).json({
+      status: false,
+      respon: "Key Chat tidak boleh kosong!",
+    });
+  }
+
+  if (id == "") {
+    return res.status(422).json({
+      status: false,
+      respon: "Key tidak boleh kosong!",
+    });
+  }
+
   const client = sessions.find((sess) => sess.id == id).client;
   let message = new Message(client, {
     id: { _serialized: key },
@@ -259,20 +325,94 @@ app.post("/download-file", async (req, res) => {
   console.log("download file");
   res.status(200).json({
     status: true,
-    response: file,
+    respon: file,
   });
 });
-// Send message
-app.post("/send-message", async (req, res) => {
-  const sender = req.body.sender;
-  const number = phoneNumberFormatter(req.body.number);
-  const message = req.body.message;
-  let type = "text";
-  if (typeof req.body.type !== "undefined") {
-    type = req.body.type;
+
+// Kirim Pesan
+app.post("/kirim-pesan", async (req, res) => {
+  if (typeof req.body.nomor == "undefined") {
+    return res.status(422).json({
+      status: false,
+      respon: "Parameter nomor tidak ada!",
+    });
+  }
+  if (typeof req.body.key == "undefined") {
+    return res.status(422).json({
+      status: false,
+      respon: "Parameter key tidak ada!",
+    });
   }
 
-  const client = sessions.find((sess) => sess.id == sender).client;
+  const keyuser = req.body.key;
+  const nomor = phoneNumberFormatter(req.body.nomor);
+  let type = "text";
+  if (typeof req.body.tipe !== "undefined") {
+    type = req.body.tipe;
+  }
+
+  if (nomor == "") {
+    return res.status(422).json({
+      status: false,
+      respon: "Nomor tidak boleh kosong!",
+    });
+  }
+
+  if (keyuser == "") {
+    return res.status(422).json({
+      status: false,
+      respon: "Key tidak boleh kosong!",
+    });
+  }
+
+  let teks = "";
+  if (req.body.teks !== "undefined") {
+    teks = req.body.teks;
+  }
+  if (type != "file") {
+    if (typeof req.body.teks == "undefined") {
+      return res.status(422).json({
+        status: false,
+        respon: "Parameter teks tidak ada!",
+      });
+    }
+    if (teks == "") {
+      return res.status(422).json({
+        status: false,
+        respon: "Teks tidak boleh kosong!",
+      });
+    }
+  } else {
+    if (typeof req.body.fileUrl == "undefined") {
+      return res.status(422).json({
+        status: false,
+        respon: "Parameter fileUrl tidak ada!",
+      });
+    }
+    if (req.body.fileUrl == "") {
+      return res.status(422).json({
+        status: false,
+        respon: "fileUrl tidak boleh kosong!",
+      });
+    }
+  }
+
+  const clientx = sessions.find((sess) => sess.id == keyuser);
+  if (typeof clientx == "undefined") {
+    return res.status(422).json({
+      status: false,
+      respon: "Key tidak terdaftar!",
+    });
+  }
+  const client = clientx.client;
+  const isRegisteredNumber = await client.isRegisteredUser(nomor);
+
+  if (!isRegisteredNumber) {
+    return res.status(422).json({
+      status: false,
+      respon: "Nomor tidak terdaftar!",
+    });
+  }
 
   if (type == "file") {
     const fileUrl = req.body.fileUrl;
@@ -289,34 +429,36 @@ app.post("/send-message", async (req, res) => {
     const media = new MessageMedia(mimetype, attachment, "Media");
 
     client
-      .sendMessage(number, media, {
-        caption: message,
+      .sendMessage(nomor, media, {
+        caption: teks,
       })
       .then((response) => {
+        let responstatus = setrespon(response);
         res.status(200).json({
           status: true,
-          response: response,
+          respon: responstatus,
         });
       })
       .catch((err) => {
         res.status(500).json({
           status: false,
-          response: err,
+          respon: err,
         });
       });
   } else {
     client
-      .sendMessage(number, message)
+      .sendMessage(nomor, teks)
       .then((response) => {
+        let responstatus = setrespon(response);
         res.status(200).json({
           status: true,
-          response: response,
+          respon: responstatus,
         });
       })
       .catch((err) => {
         res.status(500).json({
           status: false,
-          response: err,
+          respon: err,
         });
       });
   }
