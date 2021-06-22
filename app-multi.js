@@ -290,7 +290,7 @@ app.post("/send-message", async (req, res) => {
 
     client
       .sendMessage(number, media, {
-        caption: caption,
+        caption: message,
       })
       .then((response) => {
         res.status(200).json({
