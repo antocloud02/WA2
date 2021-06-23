@@ -395,6 +395,18 @@ app.post("/kirim-pesan", async (req, res) => {
         respon: "fileUrl tidak boleh kosong!",
       });
     }
+    if (typeof req.body.namaFile == "undefined") {
+      return res.status(422).json({
+        status: false,
+        respon: "Parameter namaFile tidak ada!",
+      });
+    }
+    if (req.body.namaFile == "") {
+      return res.status(422).json({
+        status: false,
+        respon: "namaFile tidak boleh kosong!",
+      });
+    }
   }
 
   const clientx = sessions.find((sess) => sess.id == keyuser);
@@ -416,6 +428,7 @@ app.post("/kirim-pesan", async (req, res) => {
 
   if (type == "file") {
     const fileUrl = req.body.fileUrl;
+    const namaFile = req.body.namaFile;
     let mimetype;
     const attachment = await axios
       .get(fileUrl, {
@@ -426,7 +439,7 @@ app.post("/kirim-pesan", async (req, res) => {
         return response.data.toString("base64");
       });
 
-    const media = new MessageMedia(mimetype, attachment, "Media");
+    const media = new MessageMedia(mimetype, attachment, namaFile);
 
     client
       .sendMessage(nomor, media, {
